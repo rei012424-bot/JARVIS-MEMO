@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JARVIS Central Core DNA Matrix</title>
+    <title>JARVIS Isolated Room DNA Matrix</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -189,7 +189,7 @@
         <div class="flex items-center justify-between w-full pointer-events-auto">
             <div class="flex items-center space-x-2">
                 <div class="w-2 h-2 bg-cyan-400 rounded-full animate-ping shadow-[0_0_10px_#00f3ff]"></div>
-                <h1 class="font-orbitron font-black text-[11px] md:text-xs tracking-wider text-cyan-400 glow-text">J.A.R.V.I.S. // CENTRAL DNA</h1>
+                <h1 class="font-orbitron font-black text-[11px] md:text-xs tracking-wider text-cyan-400 glow-text">J.A.R.V.I.S. // SECURE ROOM</h1>
             </div>
             
             <div class="flex items-center space-x-2">
@@ -284,7 +284,7 @@
         </div>
     </div>
 
-    <!-- Application & Central Core DNA Script -->
+    <!-- Application Script with Isolated Group Routing -->
     <script>
         let defaultLayers = [
             {
@@ -311,7 +311,9 @@
         let layers = JSON.parse(JSON.stringify(defaultLayers));
         let currentLayerIndex = 0;
         let currentActiveTaskId = null;
-        let currentGroupId = localStorage.getItem('kakeibo_group_id') || 'default-matrix-room';
+        
+        // 厳密に統一されたストレージキー
+        let currentGroupId = localStorage.getItem('jarvis_matrix_group_id') || 'default-matrix-room';
         let unsubscribeSnapshot = null;
         let isSyncing = false;
 
@@ -343,6 +345,7 @@
         }, 1000);
 
         function getDocRef() {
+            // パス: /groups/{groupId}/matrix_state/main
             return window.doc(window.db, "groups", currentGroupId, "matrix_state", "main");
         }
 
@@ -372,6 +375,7 @@
                         if (currentLayerIndex >= layers.length) currentLayerIndex = 0;
                     }
                 } else {
+                    // ドキュメントが存在しない場合は初期データをクラウドに書き込んで同期
                     saveToCloud();
                 }
                 renderTabs();
@@ -412,7 +416,7 @@
             const newGroupId = groupIdInput.value.trim().toLowerCase();
             if (!newGroupId) return;
             currentGroupId = newGroupId;
-            localStorage.setItem('kakeibo_group_id', currentGroupId);
+            localStorage.setItem('jarvis_matrix_group_id', currentGroupId);
             settingsModal.classList.remove('active');
             initFirebaseListeners();
         });
@@ -565,7 +569,6 @@
             workspace3D.style.transform = `rotateX(${-mouseY}deg) rotateY(${mouseX}deg)`;
         });
 
-        // Background Star Particles
         let stars = Array.from({length: 80}, () => ({
             x: (Math.random() - 0.5) * window.innerWidth * 2,
             y: (Math.random() - 0.5) * window.innerHeight * 2,
@@ -575,7 +578,6 @@
             color: Math.random() > 0.5 ? 'rgba(0, 243, 255, 0.6)' : 'rgba(168, 85, 247, 0.6)'
         }));
 
-        // Central DNA Helix Core Variables
         let dnaAngle = 0;
 
         function render3DSpace() {
@@ -583,15 +585,13 @@
             const cx = spaceCanvas.width / 2;
             const cy = spaceCanvas.height / 2;
 
-            // Deep Space Nebula Gradient
             const bgGrad = sCtx.createRadialGradient(cx, cy, 30, cx, cy, Math.max(cx, cy) * 1.2);
             bgGrad.addColorStop(0, '#041538'); 
-            bgGrad.addColorStop(0.5, '#010816');
+            bgGrad.addColorStop(0.5, '#01091f');
             bgGrad.addColorStop(1, '#010309');
             sCtx.fillStyle = bgGrad; 
             sCtx.fillRect(0, 0, spaceCanvas.width, spaceCanvas.height);
 
-            // Render Stars
             stars.forEach(p => {
                 p.z -= p.speedZ; if (p.z < -250) p.z = 250;
                 let scale = 300 / (300 + p.z);
@@ -601,16 +601,14 @@
                 sCtx.beginPath(); sCtx.arc(x2d, y2d, p.size * scale, 0, Math.PI * 2); sCtx.fill();
             });
 
-            // --- Central Unified DNA Helix Core (Structured and Centered) ---
             dnaAngle += 0.02;
-            const dnaLength = 22; // Number of base pairs
-            const stepY = 14;     // Vertical spacing
+            const dnaLength = 22;
+            const stepY = 14;
             const helixRadius = 45;
 
             sCtx.save();
-            sCtx.translate(cx, cy - 20); // Center position
+            sCtx.translate(cx, cy - 20);
 
-            // Central core glow behind DNA
             const coreGlow = sCtx.createRadialGradient(0, 0, 10, 0, 0, 180);
             coreGlow.addColorStop(0, 'rgba(0, 243, 255, 0.35)');
             coreGlow.addColorStop(0.5, 'rgba(168, 85, 247, 0.15)');
@@ -629,7 +627,6 @@
                 let x2 = Math.cos(currentAngle + Math.PI) * helixRadius;
                 let z2 = Math.sin(currentAngle + Math.PI);
 
-                // Base pair connecting line
                 sCtx.strokeStyle = 'rgba(0, 243, 255, 0.35)';
                 sCtx.lineWidth = 1.2;
                 sCtx.beginPath();
@@ -637,13 +634,11 @@
                 sCtx.lineTo(x2, yOffset);
                 sCtx.stroke();
 
-                // Strand Node 1 (Cyan Neon)
                 sCtx.fillStyle = z1 > 0 ? '#00f3ff' : 'rgba(0, 243, 255, 0.4)';
                 sCtx.beginPath();
                 sCtx.arc(x1, yOffset, z1 > 0 ? 4 : 2.5, 0, Math.PI * 2);
                 sCtx.fill();
 
-                // Strand Node 2 (Purple Neon)
                 sCtx.fillStyle = z2 > 0 ? '#a855f7' : 'rgba(168, 85, 247, 0.4)';
                 sCtx.beginPath();
                 sCtx.arc(x2, yOffset, z2 > 0 ? 4 : 2.5, 0, Math.PI * 2);
@@ -704,7 +699,7 @@
                     </div>
                     <div class="text-sm md:text-base font-bold text-cyan-100 mb-3 leading-snug">${task.title}</div>
                     <div class="flex justify-between items-center text-[10px] text-slate-400 border-t border-cyan-500/20 pt-2 font-mono">
-                        <span class="text-emerald-400 font-bold">● CENTRAL CORE SYNCED</span>
+                        <span class="text-emerald-400 font-bold">● ROOM SYNCED</span>
                         <span class="hover:text-red-400 cursor-pointer delete-icon font-bold" data-id="${task.id}">[DISPOSE]</span>
                     </div>
                 `;
