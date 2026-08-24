@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JARVIS Deep Universe DNA Matrix</title>
+    <title>JARVIS Central Core DNA Matrix</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -181,7 +181,7 @@
 </head>
 <body class="w-full h-full flex flex-col relative overflow-hidden">
 
-    <!-- Deep Universe & DNA Background Canvas -->
+    <!-- Central Core DNA Universe Background Canvas -->
     <canvas id="space-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-0"></canvas>
 
     <!-- Header & Navigation -->
@@ -189,7 +189,7 @@
         <div class="flex items-center justify-between w-full pointer-events-auto">
             <div class="flex items-center space-x-2">
                 <div class="w-2 h-2 bg-cyan-400 rounded-full animate-ping shadow-[0_0_10px_#00f3ff]"></div>
-                <h1 class="font-orbitron font-black text-[11px] md:text-xs tracking-wider text-cyan-400 glow-text">J.A.R.V.I.S. // UNIVERSE DNA</h1>
+                <h1 class="font-orbitron font-black text-[11px] md:text-xs tracking-wider text-cyan-400 glow-text">J.A.R.V.I.S. // CENTRAL DNA</h1>
             </div>
             
             <div class="flex items-center space-x-2">
@@ -284,7 +284,7 @@
         </div>
     </div>
 
-    <!-- Application & Deep Universe DNA Script -->
+    <!-- Application & Central Core DNA Script -->
     <script>
         let defaultLayers = [
             {
@@ -548,7 +548,7 @@
             inspectorModal.classList.remove('active');
         });
 
-        // --- Multi-Layer Deep Universe & Floating DNA Strands Animation ---
+        // --- Central Core DNA Helix & Deep Universe Background Animation ---
         const spaceCanvas = document.getElementById('space-canvas');
         const sCtx = spaceCanvas.getContext('2d');
         function resizeCanvas() { 
@@ -565,73 +565,35 @@
             workspace3D.style.transform = `rotateX(${-mouseY}deg) rotateY(${mouseX}deg)`;
         });
 
-        // Layer 1: Far tiny stars
-        let farStars = Array.from({length: 60}, () => ({
+        // Background Star Particles
+        let stars = Array.from({length: 80}, () => ({
             x: (Math.random() - 0.5) * window.innerWidth * 2,
             y: (Math.random() - 0.5) * window.innerHeight * 2,
             z: Math.random() * 500 - 250,
-            size: Math.random() * 1.0,
-            speedZ: 0.05
-        }));
-
-        // Layer 2: Mid glowing stars
-        let midStars = Array.from({length: 50}, () => ({
-            x: (Math.random() - 0.5) * window.innerWidth * 1.8,
-            y: (Math.random() - 0.5) * window.innerHeight * 1.8,
-            z: Math.random() * 400 - 200,
-            size: Math.random() * 1.8,
-            speedZ: 0.15,
+            size: Math.random() * 1.2,
+            speedZ: 0.08,
             color: Math.random() > 0.5 ? 'rgba(0, 243, 255, 0.6)' : 'rgba(168, 85, 247, 0.6)'
         }));
 
-        // Layer 3: Close bright pulsing stars
-        let closeStars = Array.from({length: 25}, () => ({
-            x: (Math.random() - 0.5) * window.innerWidth * 1.5,
-            y: (Math.random() - 0.5) * window.innerHeight * 1.5,
-            z: Math.random() * 300 - 150,
-            size: Math.random() * 2.5,
-            speedZ: 0.3,
-            alpha: Math.random()
-        }));
-
-        // DNA Strands scattered in deep space
-        let dnaStrands = Array.from({length: 7}, () => ({
-            x: (Math.random() - 0.5) * window.innerWidth * 1.3,
-            y: (Math.random() - 0.5) * window.innerHeight * 1.3,
-            z: Math.random() * 300 - 100,
-            length: 14,
-            radius: 30 + Math.random() * 25,
-            speedY: 0.15 + Math.random() * 0.25,
-            angle: Math.random() * Math.PI * 2,
-            spinSpeed: 0.015 + Math.random() * 0.015
-        }));
+        // Central DNA Helix Core Variables
+        let dnaAngle = 0;
 
         function render3DSpace() {
             sCtx.clearRect(0, 0, spaceCanvas.width, spaceCanvas.height);
             const cx = spaceCanvas.width / 2;
             const cy = spaceCanvas.height / 2;
 
-            // Deep Immersive Universe Background Gradient (Rich Nebula Blue & Deep Space Black)
-            const bgGrad = sCtx.createRadialGradient(cx, cy, 20, cx, cy, Math.max(cx, cy) * 1.2);
+            // Deep Space Nebula Gradient
+            const bgGrad = sCtx.createRadialGradient(cx, cy, 30, cx, cy, Math.max(cx, cy) * 1.2);
             bgGrad.addColorStop(0, '#041538'); 
-            bgGrad.addColorStop(0.4, '#01091f');
+            bgGrad.addColorStop(0.5, '#010816');
             bgGrad.addColorStop(1, '#010309');
             sCtx.fillStyle = bgGrad; 
             sCtx.fillRect(0, 0, spaceCanvas.width, spaceCanvas.height);
 
-            // Render Far Stars
-            farStars.forEach(p => {
+            // Render Stars
+            stars.forEach(p => {
                 p.z -= p.speedZ; if (p.z < -250) p.z = 250;
-                let scale = 300 / (300 + p.z);
-                let x2d = cx + p.x * scale;
-                let y2d = cy + p.y * scale;
-                sCtx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-                sCtx.beginPath(); sCtx.arc(x2d, y2d, p.size * scale, 0, Math.PI * 2); sCtx.fill();
-            });
-
-            // Render Mid Stars
-            midStars.forEach(p => {
-                p.z -= p.speedZ; if (p.z < -200) p.z = 200;
                 let scale = 300 / (300 + p.z);
                 let x2d = cx + p.x * scale;
                 let y2d = cy + p.y * scale;
@@ -639,59 +601,55 @@
                 sCtx.beginPath(); sCtx.arc(x2d, y2d, p.size * scale, 0, Math.PI * 2); sCtx.fill();
             });
 
-            // Render Close Pulsing Stars
-            closeStars.forEach(p => {
-                p.z -= p.speedZ; if (p.z < -150) p.z = 150;
-                p.alpha += 0.02;
-                let scale = 300 / (300 + p.z);
-                let x2d = cx + p.x * scale;
-                let y2d = cy + p.y * scale;
-                let currentAlpha = 0.3 + Math.sin(p.alpha) * 0.4;
-                sCtx.fillStyle = `rgba(0, 243, 255, ${currentAlpha})`;
-                sCtx.beginPath(); sCtx.arc(x2d, y2d, p.size * scale, 0, Math.PI * 2); sCtx.fill();
-            });
+            // --- Central Unified DNA Helix Core (Structured and Centered) ---
+            dnaAngle += 0.02;
+            const dnaLength = 22; // Number of base pairs
+            const stepY = 14;     // Vertical spacing
+            const helixRadius = 45;
 
-            // Render Floating DNA Strands in Deep Universe
-            dnaStrands.forEach(dna => {
-                dna.y -= dna.speedY;
-                if (dna.y < -cy - 250) dna.y = cy + 250;
-                dna.angle += dna.spinSpeed;
+            sCtx.save();
+            sCtx.translate(cx, cy - 20); // Center position
 
-                sCtx.save();
-                let scale = 300 / (300 + dna.z);
-                sCtx.translate(cx + dna.x * scale, cy + dna.y * scale);
+            // Central core glow behind DNA
+            const coreGlow = sCtx.createRadialGradient(0, 0, 10, 0, 0, 180);
+            coreGlow.addColorStop(0, 'rgba(0, 243, 255, 0.35)');
+            coreGlow.addColorStop(0.5, 'rgba(168, 85, 247, 0.15)');
+            coreGlow.addColorStop(1, 'transparent');
+            sCtx.fillStyle = coreGlow;
+            sCtx.beginPath();
+            sCtx.arc(0, 0, 180, 0, Math.PI * 2);
+            sCtx.fill();
 
-                for (let i = 0; i < dna.length; i++) {
-                    let yOffset = (i - dna.length / 2) * 16;
-                    let currentAngle = dna.angle + i * 0.35;
+            for (let i = 0; i < dnaLength; i++) {
+                let yOffset = (i - dnaLength / 2) * stepY;
+                let currentAngle = dnaAngle + i * 0.3;
 
-                    let x1 = Math.cos(currentAngle) * dna.radius * scale;
-                    let z1 = Math.sin(currentAngle);
-                    let x2 = Math.cos(currentAngle + Math.PI) * dna.radius * scale;
-                    let z2 = Math.sin(currentAngle + Math.PI);
+                let x1 = Math.cos(currentAngle) * helixRadius;
+                let z1 = Math.sin(currentAngle);
+                let x2 = Math.cos(currentAngle + Math.PI) * helixRadius;
+                let z2 = Math.sin(currentAngle + Math.PI);
 
-                    // Base pair connecting line
-                    sCtx.strokeStyle = 'rgba(0, 243, 255, 0.25)';
-                    sCtx.lineWidth = 1;
-                    sCtx.beginPath();
-                    sCtx.moveTo(x1, yOffset);
-                    sCtx.lineTo(x2, yOffset);
-                    sCtx.stroke();
+                // Base pair connecting line
+                sCtx.strokeStyle = 'rgba(0, 243, 255, 0.35)';
+                sCtx.lineWidth = 1.2;
+                sCtx.beginPath();
+                sCtx.moveTo(x1, yOffset);
+                sCtx.lineTo(x2, yOffset);
+                sCtx.stroke();
 
-                    // Strand Node 1 (Cyan Neon)
-                    sCtx.fillStyle = z1 > 0 ? '#00f3ff' : 'rgba(0, 243, 255, 0.3)';
-                    sCtx.beginPath();
-                    sCtx.arc(x1, yOffset, 3.5 * scale, 0, Math.PI * 2);
-                    sCtx.fill();
+                // Strand Node 1 (Cyan Neon)
+                sCtx.fillStyle = z1 > 0 ? '#00f3ff' : 'rgba(0, 243, 255, 0.4)';
+                sCtx.beginPath();
+                sCtx.arc(x1, yOffset, z1 > 0 ? 4 : 2.5, 0, Math.PI * 2);
+                sCtx.fill();
 
-                    // Strand Node 2 (Purple Neon)
-                    sCtx.fillStyle = z2 > 0 ? '#a855f7' : 'rgba(168, 85, 247, 0.3)';
-                    sCtx.beginPath();
-                    sCtx.arc(x2, yOffset, 3.5 * scale, 0, Math.PI * 2);
-                    sCtx.fill();
-                }
-                sCtx.restore();
-            });
+                // Strand Node 2 (Purple Neon)
+                sCtx.fillStyle = z2 > 0 ? '#a855f7' : 'rgba(168, 85, 247, 0.4)';
+                sCtx.beginPath();
+                sCtx.arc(x2, yOffset, z2 > 0 ? 4 : 2.5, 0, Math.PI * 2);
+                sCtx.fill();
+            }
+            sCtx.restore();
 
             requestAnimationFrame(render3DSpace);
         }
@@ -746,7 +704,7 @@
                     </div>
                     <div class="text-sm md:text-base font-bold text-cyan-100 mb-3 leading-snug">${task.title}</div>
                     <div class="flex justify-between items-center text-[10px] text-slate-400 border-t border-cyan-500/20 pt-2 font-mono">
-                        <span class="text-emerald-400 font-bold">● UNIVERSE SYNCED</span>
+                        <span class="text-emerald-400 font-bold">● CENTRAL CORE SYNCED</span>
                         <span class="hover:text-red-400 cursor-pointer delete-icon font-bold" data-id="${task.id}">[DISPOSE]</span>
                     </div>
                 `;
