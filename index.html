@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JARVIS Secure Matrix Hub</title>
+    <title>JARVIS Flawless Matrix</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -145,7 +145,7 @@
     <canvas id="space-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-0"></canvas>
 
     <!-- Header & Navigation -->
-    <header class="absolute top-0 left-0 right-0 z-40 px-3 py-2 flex flex-col border-b border-cyan-500/20 bg-black/90 backdrop-blur-md pointer-events-none gap-1.5">
+    <header class="absolute top-0 left-0 right-0 z-40 px-3 py-2 flex flex-col border-b border-cyan-500/20 bg-[#010309] backdrop-blur-md pointer-events-none gap-1.5">
         <div class="flex items-center justify-between w-full pointer-events-auto">
             <div class="flex items-center space-x-2">
                 <div class="w-2 h-2 bg-cyan-400 rounded-full animate-ping shadow-[0_0_8px_#00f3ff]"></div>
@@ -162,9 +162,9 @@
         <div id="tabs-container" class="flex items-center space-x-1.5 pointer-events-auto overflow-x-auto tabs-scroll w-full py-1"></div>
     </header>
 
-    <!-- Quick Add Bar (Strictly constrained with flexbox to prevent any overflow) -->
-    <div class="absolute top-20 left-2 right-2 z-40 flex items-center gap-1.5 w-auto max-w-xl mx-auto px-1 box-border">
-        <input type="text" id="new-task-input" placeholder="Type new 3D task..." class="flex-1 min-w-0 bg-black/90 border border-cyan-500/40 rounded px-2.5 py-1.5 text-[11px] text-cyan-200 focus:outline-none focus:border-cyan-400 placeholder-slate-500 backdrop-blur">
+    <!-- Quick Add Bar (Solid opaque background to completely block any underlying lines) -->
+    <div class="absolute top-20 left-2 right-2 z-40 flex items-center gap-1.5 w-auto max-w-xl mx-auto px-1 box-border bg-[#010309]/95 py-1 rounded-lg">
+        <input type="text" id="new-task-input" placeholder="Type new 3D task..." class="flex-1 min-w-0 bg-[#030712] border border-cyan-500/40 rounded px-2.5 py-1.5 text-[11px] text-cyan-200 focus:outline-none focus:border-cyan-400 placeholder-slate-500">
         <button id="add-task-btn" class="bg-cyan-500/20 hover:bg-cyan-500/40 border border-cyan-500 text-cyan-300 px-2.5 py-1.5 rounded text-[10px] font-bold transition shadow-neon cursor-pointer flex-shrink-0">+ DEPLOY</button>
     </div>
 
@@ -315,7 +315,7 @@
         }
 
         function getDocRef() {
-            return doc(db, 'artifacts', appId, 'public', 'data', `matrix_channel_v4_${currentSyncKey}`);
+            return doc(db, 'artifacts', appId, 'public', 'data', `matrix_channel_v5_${currentSyncKey}`);
         }
 
         async function saveToCloud() {
@@ -642,14 +642,9 @@
                 color: currentLayerIndex % 2 === 0 ? 'border-cyan-400 text-cyan-300' : 'border-purple-400 text-purple-300',
                 memo: `[${currentLayer.name}] 新規自動化プロトコル。`
             });
-            newTaskInput.value = andResetInput();
-        }
-
-        function andResetInput() {
             newTaskInput.value = '';
             renderNodes();
             saveToCloud();
-            return '';
         }
 
         initFirebase();
