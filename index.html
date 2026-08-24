@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JARVIS 3D Cross-Folder Task Migration Matrix</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        deepspace: '#010309',
+                        cyber: {
+                            blue: '#00f3ff',
+                            purple: '#a855f7',
+                            glow: 'rgba(0, 243, 255, 0.4)'
+                        }
+                    },
+                    boxShadow: {
+                        'neon': '0 0 25px rgba(0, 243, 255, 0.35)',
+                        'neon-3d': '0 15px 35px rgba(0, 243, 255, 0.25), inset 0 0 15px rgba(0, 243, 255, 0.2)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@500;700;900&display=swap');
+        
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background-color: #010309;
+            color: #e2e8f0;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            perspective: 1600px;
+        }
+
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .glow-text {
+            text-shadow: 0 0 12px rgba(0, 243, 255, 0.8), 0 0 24px rgba(168, 85, 247, 0.5);
+        }
+
+        #workspace-3d {
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .task-node-3d {
+            position: absolute;
+            cursor: grab;
+            transform-style: preserve-3d;
+            transition: box-shadow 0.3s, border-color 0.3s, transform 0.2s;
+            touch-action: none;
+        }
+        .task-node-3d:active {
+            cursor: grabbing;
+        }
+        .task-node-3d.focused {
+            border-color: #a855f7 !important;
+            box-shadow: 0 0 50px rgba(168, 85, 247, 0.8) !important;
+            transform: translateZ(120px) scale(1.1) !important;
+        }
+
+        .layer-tab {
+            transition: all 0.3s ease;
+        }
+        .layer-tab.active {
+            background: rgba(0, 243, 255, 0.25);
+            border-color: #00f3ff;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+            color: #00f3ff;
+        }
+
+        #inspector-modal, #settings-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(1, 3, 9, 0.88);
+            backdrop-filter: blur(14px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        #inspector-modal.active, #settings-modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #trash-core-3d {
+            position: absolute;
+            bottom: -140px;
+            right: -140px;
+            width: 260px;
+            height: 260px;
+            border-radius: 100% 0 0 0;
+            background: radial-gradient(circle at top left, rgba(239, 68, 68, 0.3), rgba(127, 29, 29, 0.6));
+            border-top: 3px dashed rgba(239, 68, 68, 0.7);
+            border-left: 3px dashed rgba(239, 68, 68, 0.7);
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-end;
+            padding: 40px;
+            transform: translateZ(60px) translateY(140px) translateX(140px);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s;
+            pointer-events: none;
+            z-index: 50;
+        }
+        #trash-core-3d.active {
+            transform: translateZ(60px) translateY(0) translateX(0);
+            pointer-events: auto;
+        }
+        #trash-core-3d.hovered {
+            background: radial-gradient(circle at top left, rgba(239, 68, 68, 0.6), rgba(185, 28, 28, 0.85));
+            box-shadow: 0 0 50px rgba(239, 68, 68, 0.8);
+            transform: translateZ(90px) translateY(0) translateX(0) scale(1.05);
+        }
+    </style>
+</head>
+<body class="w-screen h-screen flex flex-col relative overflow-hidden">
+
+    <canvas id="space-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-0"></canvas>
+
+    <!-- Header & Folder Tabs -->
+    <header class="absolute top-0 left-0 right-0 z-40 px-6 py-4 flex items-center justify-between border-b border-cyan-500/20 bg-black/60 backdrop-blur-md pointer-events-none">
+        <div class="flex items-center space-x-3 pointer-events-auto">
+            <div class="w-3 h-3 bg-cyan-400 rounded-full animate-ping shadow-[0_0_12px_#00f3ff]"></div>
+            <h1 class="font-orbitron font-black text-sm md:text-base tracking-widest text-cyan-400 glow-text">J.A.R.V.I.S. // CROSS-FOLDER MATRIX</h1>
+        </div>
+        
+        <div id="tabs-container" class="flex items-center space-x-2 pointer-events-auto overflow-x-auto max-w-lg py-1"></div>
+
+        <div class="flex items-center space-x-3 pointer-events-auto">
+            <button id="open-settings-btn" class="bg-purple-500/20 hover:bg-purple-500/40 border border-purple-500/60 text-purple-300 px-3 py-1.5 rounded text-xs font-bold transition shadow-neon cursor-pointer font-orbitron">⚙️ フォルダ設定</button>
+            <div id="clock" class="hidden sm:block px-3 py-1 bg-cyan-950/50 border border-cyan-500/40 rounded text-cyan-300 font-mono text-xs">00:00:00</div>
+        </div>
+    </header>
+
+    <!-- Quick Add Bar -->
+    <div class="absolute top-20 left-6 z-40 flex gap-2 max-w-md w-full px-2">
+        <input type="text" id="new-task-input" placeholder="現在のフォルダに3Dタスクを追加..." class="flex-1 bg-black/80 border border-cyan-500/40 rounded px-3 py-2 text-xs text-cyan-200 focus:outline-none focus:border-cyan-400 placeholder-slate-500 backdrop-blur">
+        <button id="add-task-btn" class="bg-cyan-500/20 hover:bg-cyan-500/40 border border-cyan-500 text-cyan-300 px-4 py-2 rounded text-xs font-bold transition shadow-neon cursor-pointer">＋ 展開</button>
+    </div>
+
+    <!-- Central Interactive 3D Workspace -->
+    <main id="workspace-3d" class="relative flex-1 w-full h-full overflow-hidden z-10">
+        <div id="nodes-layer" class="absolute inset-0 z-30 pointer-events-none" style="transform: scale(1); transform-origin: center center; transition: transform 0.25s ease-out;"></div>
+    </main>
+
+    <!-- Folder Settings & Creation Modal -->
+    <div id="settings-modal">
+        <div class="bg-black/95 border border-cyan-500 p-6 md:p-8 rounded-2xl max-w-lg w-full mx-4 shadow-[0_0_60px_rgba(0,243,255,0.35)] relative">
+            <div class="flex justify-between items-center mb-4 border-b border-cyan-500/30 pb-3">
+                <h2 class="font-orbitron font-bold text-lg text-cyan-200">FOLDER & LAYER CONFIG</h2>
+                <button id="settings-close" class="text-slate-400 hover:text-cyan-300 text-xl font-bold p-2 cursor-pointer">✕</button>
+            </div>
+            <div class="space-y-4 text-xs text-cyan-100 font-mono">
+                <div>
+                    <span class="text-slate-400 block mb-2">■ 新規フォルダ作成:</span>
+                    <div class="flex gap-2">
+                        <input type="text" id="new-folder-name" placeholder="新しいフォルダ名 (例: 04: KUBERNETES)" class="flex-1 bg-slate-950 border border-cyan-500/40 px-3 py-2 rounded text-xs text-cyan-200 focus:outline-none focus:border-cyan-400">
+                        <button id="create-folder-btn" class="bg-cyan-500/20 hover:bg-cyan-500/40 border border-cyan-500 text-cyan-300 px-4 py-2 rounded font-bold cursor-pointer">作成</button>
+                    </div>
+                </div>
+                <div>
+                    <span class="text-slate-400 block mb-2">■ 既存フォルダの管理:</span>
+                    <div id="folder-list-edit" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Detail Inspector Modal with Folder Migration -->
+    <div id="inspector-modal">
+        <div class="bg-black/95 border border-purple-500 p-6 md:p-8 rounded-2xl max-w-xl w-full mx-4 shadow-[0_0_60px_rgba(168,85,247,0.4)] relative">
+            <div class="flex justify-between items-center mb-4 border-b border-purple-500/30 pb-3">
+                <div>
+                    <span id="modal-category" class="text-[10px] px-2.5 py-1 rounded bg-purple-950 border border-purple-500/50 text-purple-300 font-orbitron">INFRA</span>
+                    <h2 id="modal-title" class="font-orbitron font-bold text-lg text-purple-200 mt-2">タスク詳細</h2>
+                </div>
+                <button id="modal-close" class="text-slate-400 hover:text-purple-300 text-xl font-bold p-2 cursor-pointer">✕</button>
+            </div>
+            <div class="space-y-4 text-xs text-cyan-100 font-mono">
+                <div>
+                    <span class="text-slate-400 block mb-1">■ 所属フォルダの変更（クロスフォルダー移動）:</span>
+                    <select id="modal-folder-select" class="w-full bg-slate-950 border border-purple-500/40 px-3 py-2 rounded text-xs text-purple-200 focus:outline-none focus:border-purple-400"></select>
+                </div>
+                <div>
+                    <span class="text-slate-400 block mb-1">■ ARCHITECTURE DESIGN MEMO & NOTES:</span>
+                    <textarea id="modal-memo" class="w-full h-28 bg-slate-950 border border-purple-500/40 p-3 rounded text-xs text-cyan-200 focus:outline-none focus:border-purple-400 placeholder-slate-600 resize-none" placeholder="設計アイデアや自動化スクリプトを入力..."></textarea>
+                </div>
+                <div class="flex justify-between items-center pt-2 border-t border-purple-500/20 text-[11px]">
+                    <span class="text-purple-400 font-bold">● CROSS-FOLDER SYNCED</span>
+                    <button id="modal-save" class="bg-purple-500/20 hover:bg-purple-500/40 border border-purple-500 text-purple-300 px-5 py-2 rounded transition font-bold cursor-pointer">変更を保存して同期</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="trash-core-3d">
+        <div class="text-right flex flex-col items-end">
+            <span class="text-red-400 text-xl mb-1">🗑️</span>
+            <span class="font-orbitron text-[10px] text-red-300 font-bold tracking-widest">3D DISPOSE CORE</span>
+        </div>
+    </div>
+
+    <footer class="absolute bottom-3 left-6 z-40 text-[10px] text-cyan-500/50 font-mono pointer-events-none">
+        TWO-FINGER SWIPE TO WARP FOLDERS // MOVE TASKS BETWEEN FOLDERS VIA INSPECTOR
+    </footer>
+
+    <script>
+        setInterval(() => {
+            document.getElementById('clock').innerText = new Date().toTimeString().split(' ')[0];
+        }, 1000);
+
+        let layers = [
+            {
+                name: '01: AWS ARCH',
+                tasks: [
+                    { id: 101, title: 'AWS マルチAZ VPCネットワーク設計', category: 'AWS', x: window.innerWidth * 0.15, y: window.innerHeight * 0.28, z: 50, color: 'border-cyan-400 text-cyan-300', memo: 'VPCピアリングとパブリック・プライベートサブネットのルーティング設計。' },
+                    { id: 102, title: 'EC2オートスケーリンググループ最適化', category: 'AWS', x: window.innerWidth * 0.55, y: window.innerHeight * 0.45, z: 70, color: 'border-cyan-400 text-cyan-300', memo: '負荷分散とコスト効率を考慮したインスタンスタイプの選定。' }
+                ]
+            },
+            {
+                name: '02: PYTHON AUTO',
+                tasks: [
+                    { id: 201, title: 'Boto3を活用したリソース自動監視スクリプト', category: 'PYTHON', x: window.innerWidth * 0.2, y: window.innerHeight * 0.35, z: 40, color: 'border-purple-400 text-purple-300', memo: '未アタッチのEBSボリュームを検知して自動Slack通知するコード。' },
+                    { id: 202, title: '定型レポート生成の完全自動化', category: 'PYTHON', x: window.innerWidth * 0.6, y: window.innerHeight * 0.55, z: 90, color: 'border-purple-400 text-purple-300', memo: '手動ルーティン作業を根絶するためのバッチ処理プログラム。' }
+                ]
+            },
+            {
+                name: '03: TERRAFORM',
+                tasks: [
+                    { id: 301, title: 'Terraformモジュールのリファクタリング', category: 'IAC', x: window.innerWidth * 0.25, y: window.innerHeight * 0.3, z: 60, color: 'border-emerald-400 text-emerald-300', memo: 'コードの再利用性を高めるためのディレクトリ構造再設計。' },
+                    { id: 302, title: 'State管理のS3バックエンド分離', category: 'IAC', x: window.innerWidth * 0.65, y: window.innerHeight * 0.4, z: 80, color: 'border-emerald-400 text-emerald-300', memo: 'チーム開発を見据えたStateロックとDynamoDB連携。' }
+                ]
+            }
+        ];
+
+        let currentLayerIndex = 0;
+        let currentActiveTaskId = null;
+        let globalZoom = 1;
+
+        const workspace3D = document.getElementById('workspace-3d');
+        const nodesLayer = document.getElementById('nodes-layer');
+        const trashCore3D = document.getElementById('trash-core-3d');
+        const inspectorModal = document.getElementById('inspector-modal');
+        const settingsModal = document.getElementById('settings-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalCategory = document.getElementById('modal-category');
+        const modalMemo = document.getElementById('modal-memo');
+        const modalFolderSelect = document.getElementById('modal-folder-select');
+        const tabsContainer = document.getElementById('tabs-container');
+        const folderListEdit = document.getElementById('folder-list-edit');
+
+        // Settings Modal Controls
+        document.getElementById('open-settings-btn').addEventListener('click', () => {
+            renderFolderEditList();
+            settingsModal.classList.add('active');
+        });
+        document.getElementById('settings-close').addEventListener('click', () => settingsModal.classList.remove('active'));
+
+        document.getElementById('create-folder-btn').addEventListener('click', () => {
+            const input = document.getElementById('new-folder-name');
+            const name = input.value.trim();
+            if (!name) return;
+            layers.push({ name, tasks: [] });
+            input.value = '';
+            renderTabs();
+            renderFolderEditList();
+            switchLayer(layers.length - 1);
+            settingsModal.classList.remove('active');
+        });
+
+        function renderFolderEditList() {
+            folderListEdit.innerHTML = '';
+            layers.forEach((layer, idx) => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-2 bg-slate-900 p-2 rounded border border-cyan-500/20';
+                row.innerHTML = `
+                    <input type="text" value="${layer.name}" data-index="${idx}" class="folder-name-input flex-1 bg-black border border-cyan-500/30 px-2 py-1 rounded text-xs text-cyan-200 focus:outline-none focus:border-cyan-400">
+                    <button onclick="deleteFolder(${idx})" class="text-red-400 hover:text-red-300 text-xs px-2 py-1 bg-red-950/40 rounded border border-red-500/30">削除</button>
+                `;
+                folderListEdit.appendChild(row);
+            });
+
+            document.querySelectorAll('.folder-name-input').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const idx = parseInt(e.target.getAttribute('data-index'));
+                    layers[idx].name = e.target.value;
+                    renderTabs();
+                });
+            });
+        }
+
+        window.deleteFolder = function(idx) {
+            if (layers.length <= 1) {
+                alert('少なくとも1つのフォルダが必要です。');
+                return;
+            }
+            layers.splice(idx, 1);
+            if (currentLayerIndex >= layers.length) {
+                currentLayerIndex = layers.length - 1;
+            }
+            renderTabs();
+            renderFolderEditList();
+            switchLayer(currentLayerIndex);
+        }
+
+        function renderTabs() {
+            tabsContainer.innerHTML = '';
+            layers.forEach((layer, idx) => {
+                const btn = document.createElement('button');
+                btn.id = `tab-${idx}`;
+                btn.className = `layer-tab px-3 py-1 bg-black/60 border border-cyan-500/30 rounded text-xs text-slate-300 font-orbitron whitespace-nowrap ${idx === currentLayerIndex ? 'active' : ''}`;
+                btn.innerText = layer.name;
+                btn.onclick = () => switchLayer(idx);
+                tabsContainer.appendChild(btn);
+            });
+        }
+
+        // Two-Finger Swipe / Horizontal Wheel Folder Warping
+        let touchStartX = 0;
+        window.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                touchStartX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+            }
+        });
+
+        window.addEventListener('touchend', (e) => {
+            if (e.changedTouches.length >= 1 && touchStartX !== 0) {
+                let diffX = e.changedTouches[0].clientX - touchStartX;
+                if (Math.abs(diffX) > 80) {
+                    let nextIdx = diffX > 0 ? (currentLayerIndex - 1 + layers.length) % layers.length : (currentLayerIndex + 1) % layers.length;
+                    switchLayer(nextIdx);
+                    touchStartX = 0;
+                }
+            }
+        });
+
+        window.addEventListener('wheel', (e) => {
+            if (Math.abs(e.deltaX) > 40 && !e.ctrlKey) {
+                e.preventDefault();
+                let nextIdx = e.deltaX > 0 ? (currentLayerIndex + 1) % layers.length : (currentLayerIndex - 1 + layers.length) % layers.length;
+                switchLayer(nextIdx);
+            }
+        }, { passive: false });
+
+        window.switchLayer = function(index) {
+            currentLayerIndex = index;
+            renderTabs();
+
+            workspace3D.style.transform = `translateZ(-300px) rotateY(${(index - 1) * 20}deg)`;
+            setTimeout(() => {
+                workspace3D.style.transform = `rotateX(0deg) rotateY(0deg)`;
+                renderNodes();
+            }, 350);
+        }
+
+        document.getElementById('modal-close').addEventListener('click', () => {
+            inspectorModal.classList.remove('active');
+            renderNodes();
+        });
+
+        document.getElementById('modal-save').addEventListener('click', () => {
+            if (currentActiveTaskId !== null) {
+                const activeTasks = layers[currentLayerIndex].tasks;
+                const taskIndex = activeTasks.findIndex(t => t.id === currentActiveTaskId);
+                
+                if (taskIndex !== -1) {
+                    const task = activeTasks[taskIndex];
+                    task.memo = modalMemo.value;
+
+                    // Check if folder migration was selected
+                    const targetFolderIdx = parseInt(modalFolderSelect.value);
+                    if (targetFolderIdx !== currentLayerIndex) {
+                        // Remove from current layer and push to target layer
+                        activeTasks.splice(taskIndex, 1);
+                        layers[targetFolderIdx].tasks.push(task);
+                    }
+                    renderNodes();
+                }
+            }
+            inspectorModal.classList.remove('active');
+        });
+
+        const spaceCanvas = document.getElementById('space-canvas');
+        const sCtx = spaceCanvas.getContext('2d');
+
+        function resizeCanvas() {
+            spaceCanvas.width = window.innerWidth;
+            spaceCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let mouseX = 0, mouseY = 0;
+        window.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth - 0.5) * 15;
+            mouseY = (e.clientY / window.innerHeight - 0.5) * 15;
+            workspace3D.style.transform = `rotateX(${-mouseY}deg) rotateY(${mouseX}deg)`;
+        });
+
+        let particles = [];
+        for (let i = 0; i < 150; i++) {
+            particles.push({
+                x: (Math.random() - 0.5) * window.innerWidth * 1.5,
+                y: (Math.random() - 0.5) * window.innerHeight * 1.5,
+                z: Math.random() * 500 - 250,
+                size: Math.random() * 2.5,
+                speedZ: Math.random() * 0.8 + 0.2,
+                color: Math.random() > 0.5 ? 'rgba(0, 243, 255, 0.8)' : 'rgba(168, 85, 247, 0.8)'
+            });
+        }
+
+        let dnaAngle = 0;
+        function render3DSpace() {
+            sCtx.clearRect(0, 0, spaceCanvas.width, spaceCanvas.height);
+            const bgGrad = sCtx.createRadialGradient(
+                spaceCanvas.width / 2, spaceCanvas.height / 2, 80,
+                spaceCanvas.width / 2, spaceCanvas.height / 2, Math.max(spaceCanvas.width, spaceCanvas.height)
+            );
+            bgGrad.addColorStop(0, '#060f2e');
+            bgGrad.addColorStop(1, '#010309');
+            sCtx.fillStyle = bgGrad;
+            sCtx.fillRect(0, 0, spaceCanvas.width, spaceCanvas.height);
+
+            particles.forEach(p => {
+                p.z -= p.speedZ;
+                if (p.z < -250) p.z = 250;
+                let scale = 300 / (300 + p.z);
+                let x2d = spaceCanvas.width / 2 + p.x * scale;
+                let y2d = spaceCanvas.height / 2 + p.y * scale;
+                if (x2d >= 0 && x2d <= spaceCanvas.width && y2d >= 0 && y2d <= spaceCanvas.height) {
+                    sCtx.fillStyle = p.color;
+                    sCtx.beginPath();
+                    sCtx.arc(x2d, y2d, p.size * scale, 0, Math.PI * 2);
+                    sCtx.fill();
+                }
+            });
+
+            dnaAngle += 0.02;
+            sCtx.lineWidth = 1.5;
+            for (let x = 0; x < spaceCanvas.width; x += 35) {
+                let waveZ1 = Math.sin(x * 0.005 + dnaAngle) * 120;
+                let waveZ2 = Math.sin(x * 0.005 + dnaAngle + Math.PI) * 120;
+                let scale1 = 300 / (300 + waveZ1);
+                let scale2 = 300 / (300 + waveZ2);
+                let y1 = spaceCanvas.height * 0.5 + Math.sin(x * 0.006 + dnaAngle) * 140;
+                let y2 = spaceCanvas.height * 0.5 + Math.sin(x * 0.006 + dnaAngle + Math.PI) * 140;
+
+                sCtx.strokeStyle = 'rgba(0, 243, 255, 0.35)';
+                sCtx.beginPath();
+                sCtx.arc(x, y1, 2.5 * scale1, 0, Math.PI * 2);
+                sCtx.stroke();
+
+                sCtx.strokeStyle = 'rgba(168, 85, 247, 0.35)';
+                sCtx.beginPath();
+                sCtx.arc(x, y2, 2.5 * scale2, 0, Math.PI * 2);
+                sCtx.stroke();
+
+                if (x % 70 === 0) {
+                    sCtx.strokeStyle = 'rgba(0, 243, 255, 0.15)';
+                    sCtx.beginPath();
+                    sCtx.moveTo(x, y1);
+                    sCtx.lineTo(x, y2);
+                    sCtx.stroke();
+                }
+            }
+            requestAnimationFrame(render3DSpace);
+        }
+        render3DSpace();
+
+        function targetZoomAndInspect(taskId) {
+            const activeTasks = layers[currentLayerIndex].tasks;
+            const task = activeTasks.find(t => t.id === taskId);
+            if (!task) return;
+            currentActiveTaskId = task.id;
+
+            document.querySelectorAll('.task-node-3d').forEach(el => {
+                if (parseInt(el.getAttribute('data-id')) === taskId) {
+                    el.classList.add('focused');
+                } else {
+                    el.classList.remove('focused');
+                }
+            });
+
+            modalTitle.innerText = task.title;
+            modalCategory.innerText = layers[currentLayerIndex].name;
+            modalMemo.value = task.memo || '';
+
+            // Populate folder migration dropdown
+            modalFolderSelect.innerHTML = '';
+            layers.forEach((layer, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.innerText = layer.name;
+                if (idx === currentLayerIndex) opt.selected = true;
+                modalFolderSelect.appendChild(opt);
+            });
+            
+            setTimeout(() => {
+                inspectorModal.classList.add('active');
+            }, 200);
+        }
+
+        let activeDragId = null;
+        let offsetX = 0, offsetY = 0;
+
+        function renderNodes() {
+            nodesLayer.innerHTML = '';
+            const activeLayer = layers[currentLayerIndex];
+            const activeTasks = activeLayer.tasks;
+
+            activeTasks.forEach(task => {
+                const node = document.createElement('div');
+                node.className = `task-node-3d pointer-events-auto bg-black/90 border ${task.color} p-4 rounded-xl backdrop-blur-md shadow-neon-3d w-72 select-none ${currentActiveTaskId === task.id ? 'focused' : ''}`;
+                node.style.left = `${task.x}px`;
+                node.style.top = `${task.y}px`;
+                node.style.transform = `translateZ(${task.z}px)`;
+                node.setAttribute('data-id', task.id);
+
+                node.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[9px] px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/40 text-cyan-400 font-orbitron">${activeLayer.name}</span>
+                        <span class="text-[10px] text-purple-300 cursor-pointer hover:underline inspect-btn font-bold" data-id="${task.id}">🔍 FOCUS & OPEN</span>
+                    </div>
+                    <div class="text-xs font-medium text-cyan-100 mb-2 leading-relaxed">${task.title}</div>
+                    <div class="text-[10px] text-slate-400 italic mb-3 truncate">メモ: ${task.memo || '未記入...'}</div>
+                    <div class="flex justify-between items-center text-[10px] text-slate-400 border-t border-cyan-500/20 pt-2">
+                        <span class="text-emerald-400 font-bold">● 3D MATRIX</span>
+                        <span class="hover:text-red-400 cursor-pointer delete-icon font-bold" data-id="${task.id}">[DISPOSE]</span>
+                    </div>
+                `;
+
+                node.addEventListener('dblclick', () => targetZoomAndInspect(task.id));
+                const inspectBtn = node.querySelector('.inspect-btn');
+                inspectBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    targetZoomAndInspect(task.id);
+                });
+
+                node.addEventListener('pointerdown', (e) => {
+                    activeDragId = task.id;
+                    const rect = node.getBoundingClientRect();
+                    offsetX = (e.clientX - rect.left) / globalZoom;
+                    offsetY = (e.clientY - rect.top) / globalZoom;
+                    node.style.zIndex = 100;
+                    node.setPointerCapture(e.pointerId);
+                    trashCore3D.classList.add('active');
+                });
+
+                node.addEventListener('pointermove', (e) => {
+                    if (activeDragId !== task.id) return;
+                    let newX = (e.clientX / globalZoom) - offsetX;
+                    let newY = (e.clientY / globalZoom) - offsetY;
+                    newX = Math.max(20, Math.min(window.innerWidth - 300, newX));
+                    newY = Math.max(80, Math.min(window.innerHeight - 180, newY));
+
+                    task.x = newX;
+                    task.y = newY;
+                    node.style.left = `${newX}px`;
+                    node.style.top = `${newY}px`;
+
+                    const trashRect = trashCore3D.getBoundingClientRect();
+                    if (e.clientX >= trashRect.left && e.clientY >= trashRect.top) {
+                        trashCore3D.classList.add('hovered');
+                    } else {
+                        trashCore3D.classList.remove('hovered');
+                    }
+                });
+
+                node.addEventListener('pointerup', (e) => {
+                    if (activeDragId === task.id) {
+                        const trashRect = trashCore3D.getBoundingClientRect();
+                        if (e.clientX >= trashRect.left && e.clientY >= trashRect.top) {
+                            activeLayer.tasks = activeTasks.filter(t => t.id !== task.id);
+                            renderNodes();
+                        }
+                        activeDragId = null;
+                        node.style.zIndex = 30;
+                        trashCore3D.classList.remove('active', 'hovered');
+                    }
+                });
+
+                nodesLayer.appendChild(node);
+            });
+
+            document.querySelectorAll('.delete-icon').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(e.target.getAttribute('data-id'));
+                    layers[currentLayerIndex].tasks = layers[currentLayerIndex].tasks.filter(t => t.id !== id);
+                    renderNodes();
+                });
+            });
+        }
+
+        const newTaskInput = document.getElementById('new-task-input');
+        document.getElementById('add-task-btn').addEventListener('click', addNewTask);
+        newTaskInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addNewTask();
+        });
+
+        function addNewTask() {
+            const title = newTaskInput.value.trim();
+            if (!title) return;
+            const currentLayer = layers[currentLayerIndex];
+            currentLayer.tasks.push({
+                id: Date.now(),
+                title,
+                category: currentLayer.name,
+                x: window.innerWidth * 0.3 + Math.random() * 200,
+                y: window.innerHeight * 0.3 + Math.random() * 150,
+                z: Math.random() * 60 + 20,
+                color: currentLayerIndex % 2 === 0 ? 'border-cyan-400 text-cyan-300' : 'border-purple-400 text-purple-300',
+                memo: `[${currentLayer.name}] 内で展開された自動化・設計プロトコル。`
+            });
+            newTaskInput.value = '';
+            renderNodes();
+        }
+
+        renderTabs();
+        switchLayer(0);
+    </script>
+</body>
+</html>
