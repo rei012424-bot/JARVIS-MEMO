@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JARVIS Multi-Tenant Secure Matrix</title>
+    <title>JARVIS Fixed Multi-Tenant Matrix</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -189,7 +189,7 @@
         <div class="flex items-center justify-between w-full pointer-events-auto">
             <div class="flex items-center space-x-2">
                 <div class="w-2 h-2 bg-cyan-400 rounded-full animate-ping shadow-[0_0_10px_#00f3ff]"></div>
-                <h1 class="font-orbitron font-black text-[11px] md:text-xs tracking-wider text-cyan-400 glow-text">J.A.R.V.I.S. // TENANT MATRIX</h1>
+                <h1 class="font-orbitron font-black text-[11px] md:text-xs tracking-wider text-cyan-400 glow-text">J.A.R.V.I.S. // SECURE ROOM</h1>
             </div>
             
             <div class="flex items-center space-x-2">
@@ -343,7 +343,6 @@
         }, 1000);
 
         function getDocRef() {
-            // パス: /groups/{groupId}/matrix_state/main
             return window.doc(window.db, "groups", currentGroupId, "matrix_state", "main");
         }
 
@@ -362,7 +361,6 @@
         function initFirebaseListeners() {
             if (!window.db) return;
             
-            // 💡 既存のリスナーを確実にクリーンアップ（破棄）してから新しい部屋に接続
             if (unsubscribeSnapshot) {
                 unsubscribeSnapshot();
                 unsubscribeSnapshot = null;
@@ -378,7 +376,6 @@
                         if (currentLayerIndex >= layers.length) currentLayerIndex = 0;
                     }
                 } else {
-                    // 新しい部屋でデータが未作成の場合、初期データを書き込んで初期化
                     saveToCloud();
                 }
                 renderTabs();
@@ -415,7 +412,6 @@
             }
         }
 
-        // 💡 「部屋移動」ボタンを押したときのハンドリングを完全強化
         document.getElementById('save-group-btn').addEventListener('click', () => {
             const newGroupId = groupIdInput.value.trim().toLowerCase();
             if (!newGroupId) return;
@@ -428,11 +424,9 @@
             localStorage.setItem('jarvis_matrix_group_id', currentGroupId);
             settingsModal.classList.remove('active');
             
-            // 部屋が変わったので、デフォルトの初期レイヤーを一時セットしてから新ルームをロード
             layers = JSON.parse(JSON.stringify(defaultLayers));
             currentLayerIndex = 0;
             
-            // 新しい合言葉のデータベース領域へ即座に接続
             initFirebaseListeners();
         });
 
@@ -763,7 +757,7 @@
                 nodesLayer.appendChild(node);
             });
 
-            document.querySelectorAll('.delete-icon').forEach, (btn => {
+            document.querySelectorAll('.delete-icon').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const id = parseInt(e.target.getAttribute('data-id'));
                     layers[currentLayerIndex].tasks = layers[currentLayerIndex].tasks.filter(t => t.id !== id);
